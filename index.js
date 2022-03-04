@@ -31,6 +31,9 @@ const port = parseInt(process.env.PORT || '5000', 10);
   server.use(errorsHandler);
 
   server.listen(port, () => {
-    console.log(`> Ready on http://localhost:${port}`);
+    console.table({
+      host: `> Ready on http://localhost:${port}`,
+      fe: process.env.FE_URL
+    });
   });
 })();
