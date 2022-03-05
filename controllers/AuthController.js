@@ -2,27 +2,26 @@ const yup = require('yup');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const cookie = require('cookie');
-
-const sequelize = require('../database');
-
-const { user: model } = sequelize.models;
+const UserModel = require('../models/User');
 
 class AuthController {
   async register(req, res, next) {
     const { first_name, last_name, email, password } = req.body;
 
     try {
-      const userExisted = await model.findOne({ where: { email } });
+      const userExisted = await UserModel.findOne({email});
 
       if (userExisted) {
         throw { code: 'ER_DUP_ENTRY' };
       }
 
-      const user = await model.create({
+      const user = await UserModel.create({
         first_name,
         last_name,
         email,
         password,
+        created_at: new Date(),
+        updated_at: new Date(),
       });
 
       const token = jwt.sign(
@@ -39,14 +38,12 @@ class AuthController {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           maxAge: 24 * 60 * 60,
-          domain:  process.env.FE_DOMAIN
+          domain:  process.env.FE_URL
         }),
       });
 
       return res.end();
     } catch (err) {
-      console.log(err);
-
       if (err.code === 'ER_DUP_ENTRY') {
         return res.status(400).json({
           success: false,
@@ -59,6 +56,7 @@ class AuthController {
 
       return res.status(500).json({
         success: false,
+        error: 'Server error'
       });
     }
   }
@@ -67,10 +65,10 @@ class AuthController {
     const { email, password } = req.body;
 
     try {
-      const user = await model.findOne({ where: { email } });
+      const user = await UserModel.findOne({email}).lean();
 
       if (!user) {
-        return res.status(401).json({
+        return res.status(400).json({
           success: false,
           error: 'Login failed',
         });
@@ -79,21 +77,23 @@ class AuthController {
       const isMatch = await bcrypt.compare(password, user.password);
 
       if (!isMatch) {
-        return res.status(401).json({
+        return res.status(400).json({
           success: false,
           error: 'Login failed',
         });
       }
 
       const token = jwt.sign(
-        { id: user.id, email: user.email },
+        { id: user._id, email: user.email },
         process.env.JWT_SECRET,
         {
           expiresIn: '1d',
         },
       );
 
-      res.writeHead(200, {
+      const {password: _, ...userRes} = user;
+
+      res.set({
         'Set-Cookie': cookie.serialize('token', token, {
           path: '/',
           httpOnly: true,
@@ -103,7 +103,11 @@ class AuthController {
         }),
       });
 
-      return res.end();
+      return res.status(200).json({
+        data: {
+          user: userRes
+        }
+      });
     } catch (err) {
       console.log(err);
       return res.status(500).json({

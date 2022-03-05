@@ -1,42 +1,12 @@
 const yup = require('yup');
-const { Op } = require('sequelize');
 
-const sequelize = require('../database');
 const { slugify, sliceString } = require('../helpers/utils');
 const NotFoundException = require('../exceptions/NotFoundException');
-
-const {
-  blog: model,
-  block: blockModel,
-  user: userModel,
-  view: ViewModel,
-  like: LikeModel,
-  category: CategoryModel,
-  comment: CommentModel,
-  serial: SerialModal,
-} = sequelize.models;
-
+const BlogModel = require('../models/Blog');
 
 class BlogController {
   async find(req, res) {
-    const data = await model.findAll({
-      order: [['created_at', 'DESC']],
-      include: [
-        {
-          model: userModel,
-          as: 'user',
-          attributes: ['last_name', 'first_name', 'id', 'avatar_url'],
-        },
-        {
-          model: CategoryModel,
-          as: 'categories',
-        },
-        {
-          model: SerialModal,
-          as: 'serials',
-        },
-      ]
-    });
+    const data = await blogModel.find();
 
     return res.status(200).json({
       statusCode: 200,
@@ -158,10 +128,8 @@ class BlogController {
       excerpt = firstParagraph.data.text;
     }
 
-    const t = await sequelize.transaction();
-
     try {
-      const blog = await model.create({
+      const blog = await BlogModel.create({
         title,
         status,
         user_id,
@@ -171,23 +139,23 @@ class BlogController {
         slug: slug || slugify(title).toLowerCase(),
       });
 
-      const id = blog.getDataValue('id');
 
-      const view = await ViewModel.create({
-        count: 0,
-      });
-      await blog.setView(view);
+      // const id = blog.getDataValue('id');
 
-      if (category_ids && category_ids.length) {
-        await blog.setCategories(category_ids);
-      }
+      // const view = await ViewModel.create({
+      //   count: 0,
+      // });
+      // await blog.setView(view);
 
-      await blockModel.create({
-        data: blocks,
-        blog_id: id,
-      });
+      // if (category_ids && category_ids.length) {
+      //   await blog.setCategories(category_ids);
+      // }
 
-      await t.commit();
+      // await blockModel.create({
+      //   data: blocks,
+      //   blog_id: id,
+      // });
+
 
       return res.status(201).json({
         statusCode: 201,
@@ -195,7 +163,6 @@ class BlogController {
         data: blog,
       });
     } catch (error) {
-      t.rollback();
       console.log(error);
 
       return next(error);

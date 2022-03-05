@@ -27,13 +27,14 @@ const port = parseInt(process.env.PORT || '5000', 10);
     credentials: true,
   }));
   server.use(express.json());
-  server.use('/api', require('./routes'));
+  server.use('/', require('./routes'));
   server.use(errorsHandler);
 
   server.listen(port, () => {
     console.table({
-      host: `> Ready on http://localhost:${port}`,
-      fe: process.env.FE_URL
+      HOST: `> Ready on http://localhost:${port}`,
+      FE_URL: process.env.FE_URL,
+      NODE_ENV: process.env.NODE_ENV
     });
   });
 })();

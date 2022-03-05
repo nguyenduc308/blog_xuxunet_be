@@ -25,12 +25,14 @@ class RateController {
     });
 
     res.status(200).json({
+      data: {
         total: total + totalNav, 
         schema,
         monthly: m,
         rate: r * 100,
         count: n,
         nav,
+      }
     });
   }
 }
