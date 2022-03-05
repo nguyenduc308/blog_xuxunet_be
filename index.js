@@ -19,7 +19,7 @@ const port = parseInt(process.env.PORT || '5000', 10);
 
 (async () => {
   const server = express();
-  // await assertDatabaseConnectionOk();
+  await assertDatabaseConnectionOk();
   
   server.use(cors({
     "origin": process.env.FE_URL,
