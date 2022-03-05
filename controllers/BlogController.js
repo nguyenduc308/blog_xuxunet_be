@@ -38,6 +38,7 @@ class BlogController {
 
     const comments = await CommentModel.find({blog: blog._id, parent: { $eq: null }})
                             .populate('children', null, 'comments')
+                            .populate('user', ['first_name', 'last_name'], 'users')
                             .sort([['created_at', -1]]);
                     
     let viewCount = 0;

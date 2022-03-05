@@ -14,7 +14,7 @@ class CommentController {
       const comment = new CommentModel({
         blog: blog_id,
         content,
-        user: decoded._id,
+        user: decoded.id,
         created_at: new Date(),
         updated_at: new Date(),
         parent: comment_id || null
@@ -30,10 +30,12 @@ class CommentController {
 
       await comment.save();
 
+      const resp = await CommentModel.findById(comment._id).populate('user', ['first_name', 'last_name'], 'users').lean()
+
       return res.status(200).json({
         sussess: true,
         statusCode: 200,
-        data: comment
+        data: resp
       });
     } catch (err) {
       next(err);
