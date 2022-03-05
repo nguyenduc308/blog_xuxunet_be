@@ -16,6 +16,13 @@ const BlogSchema = mongoose.Schema({
     created_at: Date,
     updated_at: Date,
     blocks: Object,
+    author: {
+        type: mongoose.Schema.Types.ObjectId, ref: 'users'
+    },
+    categories: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'categories'
+    }]
 })
 
 

@@ -2,103 +2,15 @@ const yup = require('yup');
 
 const { slugify, sliceString } = require('../helpers/utils');
 const NotFoundException = require('../exceptions/NotFoundException');
+
 const BlogModel = require('../models/Blog');
 
 class BlogController {
   async find(req, res) {
-    const data = await blogModel.find();
-
-    return res.status(200).json({
-      statusCode: 200,
-      success: true,
-      data,
-    });
-  }
-
-  async findBySlug(req, res, next) {
-    const { slug } = req.params;
-
-    const data = await model.findOne({
-      where: { slug },
-      include: [
-        {
-          model: userModel,
-          as: 'user',
-          attributes: ['last_name', 'first_name', 'id', 'avatar_url'],
-        },
-        {
-          model: blockModel,
-          as: 'blocks',
-          attributes: {
-            exclude: ['blog_id'],
-          },
-        },
-        {
-          model: ViewModel,
-          as: 'view',
-          attributes: {
-            exclude: ['id', 'blog_id'],
-          },
-        },
-        {
-          model: CategoryModel,
-          as: 'categories',
-        },
-        {
-          model: LikeModel,
-          as: 'likes',
-          attributes: {
-            exclude: ['id', 'cat', 'blog_id'],
-          },
-        },
-        {
-          model: CommentModel,
-          as: 'comments',
-          required: false,
-          where: {
-            //@ts-ignore
-            comment_id: {
-              [Op.eq]: null,
-            },
-          },
-          attributes: {
-            exclude: ['comment_id'],
-          },
-          include: [
-            {
-              model: userModel,
-              as: 'user',
-              attributes: ['last_name', 'first_name', 'id', 'avatar_url'],
-            },
-            {
-              model: CommentModel,
-              as: 'children',
-              include: [
-                {
-                  model: userModel,
-                  as: 'user',
-                  attributes: ['last_name', 'first_name', 'id', 'avatar_url'],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    });
-
-    if (!data) {
-      return next(new NotFoundException(`Blog slug ${slug} not found`));
-    }
-
-    const blog_id = data.getDataValue('id');
-
-    await ViewModel.findOne({ where: { blog_id } }).then((view) =>
-      view.update({ count: view.getDataValue('count') + 1 }),
-    );
-
-    if (!data) {
-      return next(new NotFoundException(`Blog slug {${slug}} not found`));
-    }
+    const data = await BlogModel
+        .find()
+        .populate('categories')
+        .populate('author', ['first_name', 'last_name', 'email'], 'users');
 
     return res.status(200).json({
       statusCode: 200,
@@ -116,9 +28,9 @@ class BlogController {
       slug,
       image_url,
       show_image,
-      category_ids,
+      categories,
     } = req.body;
-    const user_id = res.locals;
+    const author_id = res.locals.id;
 
     const firstParagraph = blocks.find(
       (block) => block.type === 'paragraph',
@@ -132,11 +44,13 @@ class BlogController {
       const blog = await BlogModel.create({
         title,
         status,
-        user_id,
         image_url,
         show_image,
+        blocks,
         excerpt: sliceString(excerpt, 250, '') || '',
         slug: slug || slugify(title).toLowerCase(),
+        author: author_id,
+        categories,
       });
 
 

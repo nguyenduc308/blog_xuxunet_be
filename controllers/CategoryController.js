@@ -1,18 +1,11 @@
 const yup =  require('yup');
-
-const sequelize =  require('../database');
 const { slugify } =  require('../helpers/utils');
 const NotFoundException =  require('../exceptions/NotFoundException');
+const CategoryModel = require('../models/Category');
 
-const {
-  category: model,
-  block: blockModel,
-  user: userModel,
-} = sequelize.models;
-
-class BlogController {
+class CategoryController {
   async find(req, res) {
-    const data = await model.findAll();
+    const data = await CategoryModel.find();
 
     return res.status(200).json({
       statusCode: 200,
@@ -42,7 +35,7 @@ class BlogController {
   async create(req, res) {
     let { name, slug, description, color, bg_color, status } = req.body;
 
-    const category = await model.create({
+    const category = await CategoryModel.create({
       name,
       color,
       status,
@@ -104,4 +97,4 @@ class BlogController {
   }
 }
 
-module.exports = new BlogController();
+module.exports = new CategoryController();

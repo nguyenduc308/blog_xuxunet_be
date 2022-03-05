@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const controller = require('../controllers/BlogController');
+const controller = require('../controllers/CategoryController');
 const { authenticate, authorization } = require('../middlewares/auth');
 
 router.get('/', controller.find);

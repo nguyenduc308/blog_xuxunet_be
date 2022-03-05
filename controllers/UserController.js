@@ -4,9 +4,9 @@ const UserModel = require('../models/User');
 
 class UserController {
   async getMe(req, res, next) {
-    const id = res.locals;
+    const decoded = res.locals;
 
-    const {password, ...user} = await UserModel.findById(id);
+    const {password, ...user} = await UserModel.findById(decoded.id).lean();
 
     if (user) {
       return res.status(200).json({

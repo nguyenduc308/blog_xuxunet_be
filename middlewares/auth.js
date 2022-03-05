@@ -3,7 +3,6 @@ const jwt = require("jsonwebtoken");
 const cookie = require("cookie");
 
 exports.authenticate = async (req, res, next) => {
-  console.log(typeof UnauthorizationException)
   try {
     const cookieEncode = req.headers.cookie;
 
@@ -22,7 +21,7 @@ exports.authenticate = async (req, res, next) => {
       return next(new UnauthorizationException());
     }
 
-    res.locals = decode.id;
+    res.locals = decode;
 
     return next();
   } catch (err) {
@@ -31,4 +30,12 @@ exports.authenticate = async (req, res, next) => {
   }
 };
 
-exports.authorization = () => () => {};
+exports.authorization = (roles) => (req, res, next) => {
+  const decoded = res.locals;
+
+  if (!roles.includes(decoded.role)) {
+    return next(new UnauthorizationException());
+  }
+
+  next();
+};

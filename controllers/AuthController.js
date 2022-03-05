@@ -25,24 +25,31 @@ class AuthController {
       });
 
       const token = jwt.sign(
-        { id: user.id, email: user.email },
+        { id: user.id, email: user.email, role: user.role },
         process.env.JWT_SECRET,
         {
           expiresIn: '1d',
         },
       );
 
-      res.writeHead(200, {
+      res.set({
         'Set-Cookie': cookie.serialize('token', token, {
           path: '/',
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           maxAge: 24 * 60 * 60,
-          domain:  process.env.FE_URL
+          domain:  process.env.FE_DOMAIN
         }),
       });
 
-      return res.end();
+      const {password: _, ...userRes} = user;
+
+      return res.status(200).json({
+        data: {
+          user: userRes
+        },
+        statusCode: 200
+      });
     } catch (err) {
       if (err.code === 'ER_DUP_ENTRY') {
         return res.status(400).json({
@@ -84,7 +91,7 @@ class AuthController {
       }
 
       const token = jwt.sign(
-        { id: user._id, email: user.email },
+        { id: user._id, email: user.email, role: user.role },
         process.env.JWT_SECRET,
         {
           expiresIn: '1d',
