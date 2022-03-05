@@ -14,7 +14,7 @@ class CommentController {
       const comment = new CommentModel({
         blog: blog_id,
         content,
-        user: decoded.id,
+        user: decoded._id,
         created_at: new Date(),
         updated_at: new Date(),
         parent: comment_id || null
