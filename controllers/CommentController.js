@@ -1,52 +1,41 @@
-const sequelize = require('../database');
-
-const { comment: CommentModel, user: UserModel } = sequelize.models;
+const CommentModel = require('../models/Comment');
 
 class CommentController {
   async create(req, res, next) {
     const { content, blog_id, comment_id } = req.body;
-    const user_id = res.locals;
+    const decoded = res.locals;
 
     const existedComment = comment_id
-      ? await CommentModel.findByPk(comment_id)
+      ? await CommentModel.findById(comment_id).lean()
       : null;
 
-    const t = await sequelize.transaction();
 
     try {
-      const comment = await CommentModel.create({
-        user_id,
+      const comment = new CommentModel({
+        blog: blog_id,
         content,
-        blog_id,
+        user: decoded._id,
+        created_at: new Date(),
+        updated_at: new Date(),
+        parent: comment_id || null
       });
 
       if (existedComment) {
-        existedComment.addChildren(comment);
+        await CommentModel.updateOne({
+          id: existedComment._id
+        }, {
+          children: existedComment.children.concat(comment._id)
+        });
       }
 
-      t.commit();
-
-      const resp = await CommentModel.findByPk(comment.getDataValue('id'), {
-        attributes: {
-          exclude: ['user_id'],
-        },
-        include: [
-          {
-            model: UserModel,
-            attributes: ['last_name', 'first_name', 'id', 'avatar_url'],
-          },
-        ],
-      });
+      await comment.save();
 
       return res.status(200).json({
         sussess: true,
         statusCode: 200,
-        data: resp,
+        data: comment
       });
     } catch (err) {
-      console.log('Error create comment', err);
-
-      t.rollback();
       next(err);
     }
   }

@@ -17,6 +17,9 @@ const LikeSchema = mongoose.Schema({
     },
     blog: {type: mongoose.Schema.Types.ObjectId, ref: 'blogs'},
     comment: {type: mongoose.Schema.Types.ObjectId, ref: 'comment'},
+    created_at: Date,
+    updated_at: Date,
+    user: {type: mongoose.Schema.Types.ObjectId, ref: 'users'},
 })
 
 module.exports = mongoose.model('likes', LikeSchema)

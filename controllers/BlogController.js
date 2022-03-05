@@ -5,6 +5,8 @@ const NotFoundException = require('../exceptions/NotFoundException');
 
 const BlogModel = require('../models/Blog');
 const ViewModel = require('../models/View');
+const CommentModel = require('../models/Comment');
+const LikeModel = require('../models/Like');
 
 class BlogController {
   async find(req, res) {
@@ -28,23 +30,34 @@ class BlogController {
     const blog = await BlogModel
         .findOne({slug})
         .populate('categories')
-        .populate('author', ['first_name', 'last_name', 'email'], 'users')
+        .populate('author', ['first_name', 'last_name', 'email'], 'users', {
+          sort: [['created_at', -1]]
+        })
+        .select('-comments')
         .populate('view');
-    
+
+    const comments = await CommentModel.find({blog: blog._id, parent: { $eq: null }})
+                            .populate('children', null, 'comments')
+                            .sort([['created_at', -1]]);
+                    
     let viewCount = 0;
 
     if (from == 'client' && blog.view) {
       viewCount = blog.view.count + 1;
 
       await ViewModel.findByIdAndUpdate(blog.view._id, {
-        count: viewCount
+        count: viewCount,
+        updated_at: new Date()
       });
     }
 
     return res.status(200).json({
       statusCode: 200,
       success: true,
-      data: blog,
+      data: {
+        blog,
+        comments
+      },
     });
   }
 
@@ -87,6 +100,8 @@ class BlogController {
       const view = await ViewModel.create({
         blog: blog._id,
         count: 0,
+        created_at: new Date(),
+        updated_at: new Date(),
       });
 
       blog.view = view._id;
