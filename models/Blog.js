@@ -22,7 +22,12 @@ const BlogSchema = mongoose.Schema({
     categories: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'categories'
-    }]
+    }],
+    view: {
+        type: mongoose.Schema.Types.ObjectId, ref: 'views'
+    },
+    likes: [{type: mongoose.Schema.Types.ObjectId, ref: 'likes'}],
+    comments: [{type: mongoose.Schema.Types.ObjectId, ref: 'comments'}],
 })
 
 

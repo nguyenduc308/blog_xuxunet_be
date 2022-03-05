@@ -4,18 +4,47 @@ const { slugify, sliceString } = require('../helpers/utils');
 const NotFoundException = require('../exceptions/NotFoundException');
 
 const BlogModel = require('../models/Blog');
+const ViewModel = require('../models/View');
 
 class BlogController {
   async find(req, res) {
     const data = await BlogModel
         .find()
         .populate('categories')
-        .populate('author', ['first_name', 'last_name', 'email'], 'users');
+        .populate('author', ['first_name', 'last_name', 'email'], 'users')
+        .sort([['created_at', -1]])
 
     return res.status(200).json({
       statusCode: 200,
       success: true,
       data,
+    });
+  }
+
+  async findBySlug(req, res) {
+    const {slug} = req.params;
+    const {from} = req.query;
+    
+    const blog = await BlogModel
+        .findOne({slug})
+        .populate('categories')
+        .populate('author', ['first_name', 'last_name', 'email'], 'users')
+        .populate('view');
+    
+    let viewCount = 0;
+
+    if (from == 'client' && blog.view) {
+      viewCount = blog.view.count + 1;
+
+      await ViewModel.findByIdAndUpdate(blog.view._id, {
+        count: viewCount
+      });
+    }
+
+    return res.status(200).json({
+      statusCode: 200,
+      success: true,
+      data: blog,
     });
   }
 
@@ -41,7 +70,7 @@ class BlogController {
     }
 
     try {
-      const blog = await BlogModel.create({
+      const blog = new BlogModel({
         title,
         status,
         image_url,
@@ -51,25 +80,17 @@ class BlogController {
         slug: slug || slugify(title).toLowerCase(),
         author: author_id,
         categories,
+        created_at: new Date(),
+        updated_at: new Date(),
       });
 
+      const view = await ViewModel.create({
+        blog: blog._id,
+        count: 0,
+      });
 
-      // const id = blog.getDataValue('id');
-
-      // const view = await ViewModel.create({
-      //   count: 0,
-      // });
-      // await blog.setView(view);
-
-      // if (category_ids && category_ids.length) {
-      //   await blog.setCategories(category_ids);
-      // }
-
-      // await blockModel.create({
-      //   data: blocks,
-      //   blog_id: id,
-      // });
-
+      blog.view = view._id;
+      await blog.save();
 
       return res.status(201).json({
         statusCode: 201,
