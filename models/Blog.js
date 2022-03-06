@@ -2,23 +2,27 @@ const mongoose = require('mongoose');
 
 const BlogSchema = mongoose.Schema({
     title: String, 
-    slug: String,
+    slug: {
+      type: String,
+      unique: true,
+    },
     status: {
         type: String,
-        enum: ['deleted', 'draft', 'public'],
+        enum: ['draft', 'public'],
         default: 'public'
     },
     featured_image_url: String,
     excerpt: String,
     show_featured_image: Boolean,
     content: String,
+    blocks: Object,
+
     deleted_at: Date,
     deleted_by: {
       type: mongoose.Schema.Types.ObjectId, ref: 'users'
     },
     created_at: Date,
     updated_at: Date,
-    blocks: Object,
     author: {
         type: mongoose.Schema.Types.ObjectId, ref: 'users'
     },

@@ -11,10 +11,25 @@ const LikeModel = require('../models/Like');
 class BlogController {
   async find(req, res) {
     const data = await BlogModel
-        .find()
+        .find({deleted_at: {$eq: null}})
         .populate('categories')
         .populate('author', ['first_name', 'last_name', 'email'], 'users')
         .sort([['created_at', -1]])
+
+    return res.status(200).json({
+      statusCode: 200,
+      success: true,
+      data,
+    });
+  }
+
+  async findSoftDeleted(req, res) {
+    const data = await BlogModel
+        .find({deleted_at: {$ne: null}})
+        .populate('categories')
+        .populate('author', ['first_name', 'last_name', 'email'], 'users')
+        .populate('deleted_by', ['first_name', 'last_name', 'email'], 'users')
+        .sort([['deleted_at', -1]])
 
     return res.status(200).json({
       statusCode: 200,
@@ -28,7 +43,7 @@ class BlogController {
     const {from} = req.query;
     
     const blog = await BlogModel
-        .findOne({slug})
+        .findOne({slug, deleted_at: {$eq: null}})
         .populate('categories')
         .populate('author', ['first_name', 'last_name', 'email'], 'users', {
           sort: [['created_at', -1]]
@@ -96,6 +111,8 @@ class BlogController {
         categories,
         created_at: new Date(),
         updated_at: new Date(),
+        deleted_at: null,
+        deleted_by: null,
       });
 
       const view = await ViewModel.create({
@@ -157,17 +174,51 @@ class BlogController {
     });
   }
 
-  async destroy(req, res, next) {
-    return model
-      .destroy({
-        where: { id: req.params.id },
+  async softDestroy(req, res, next) {
+    return BlogModel
+      .findOneAndUpdate({
+        _id: req.params.id,
+      }, {
+        $set: {
+          deleted_at: new Date(),
+          deleted_by: res.locals.id,
+          updated_at: new Date(),
+        },
+      }, {
+        upsert: true,
+        rawResult: true
       })
       .then((value) => {
-        if (typeof value === 'number' && value > 0) {
-          return res.status(200).json({ success: true, statusCode: 200 });
-        } else {
-          next(new NotFoundException(`Blog id {${req.params.id}} not found`));
-        }
+        return res.status(200).json({ success: true, statusCode: 200, id: req.params.id});
+      });
+  }
+
+  async undoDestroy(req, res, next) {
+    return BlogModel
+      .findOneAndUpdate({
+        _id: req.params.id,
+      }, {
+        $set: {
+          deleted_at: null,
+          deleted_by: null,
+          updated_at: new Date(),
+        },
+      }, {
+        upsert: true,
+        rawResult: true
+      })
+      .then((value) => {
+        return res.status(200).json({ success: true, statusCode: 200, id: req.params.id});
+      });
+  }
+
+  async destroy(req, res, next) {
+    return BlogModel
+      .findOneAndDelete({
+        _id: req.params.id,
+      })
+      .then((value) => {
+        return res.status(200).json({ success: true, statusCode: 200, id: req.params.id});
       });
   }
 
