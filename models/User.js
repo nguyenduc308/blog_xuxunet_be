@@ -12,6 +12,15 @@ const UserSchema = new mongoose.Schema({
   first_name: String,
   last_name: String,
   avatar_url: String,
+  status: {
+    type: Number,
+    enum: [0,1],
+    default: 0,
+  },
+  active_code: String,
+  actived_at: Date,
+  banned_at: Date,
+  deleted_at: String,
   updated_at: Date,
   created_at: Date,
 });

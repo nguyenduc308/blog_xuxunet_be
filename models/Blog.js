@@ -13,6 +13,9 @@ const BlogSchema = mongoose.Schema({
     show_featured_image: Boolean,
     content: String,
     deleted_at: Date,
+    deleted_by: {
+      type: mongoose.Schema.Types.ObjectId, ref: 'users'
+    },
     created_at: Date,
     updated_at: Date,
     blocks: Object,

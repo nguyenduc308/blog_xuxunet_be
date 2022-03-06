@@ -9,6 +9,8 @@ const CommentSchema = mongoose.Schema({
     parent: {type: mongoose.Schema.Types.ObjectId, ref: 'comments'},
     created_at: Date,
     updated_at: Date,
+    deleted_at: Date,
+    deleted_by: {type: mongoose.Schema.Types.ObjectId, ref: 'users'},
 })
 
 module.exports = mongoose.model('comments', CommentSchema);
