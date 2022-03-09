@@ -149,8 +149,12 @@ class JarController {
     });
 
     await Promise.all(updateJars).then(async (result) => {
-      const currentJars = jarsheet.jars;
-      const newIds = result.map((jar) => jar._id).filter((jar) => {
+      const ids = result.map((jar) => jar._id);
+      const currentJars = jarsheet.jars.filter((curJar) => {
+        return ids.includes(curJar._id);
+      });
+
+      const newIds = ids.filter((jar) => {
         return !currentJars.includes(jar._id);
       });
 
