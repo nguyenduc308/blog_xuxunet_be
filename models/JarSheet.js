@@ -6,8 +6,15 @@ const JarSheetSchema = mongoose.Schema({
     description: String,
     income: Number,
     index: Number,
-
     deleted_at: Date,
+    show_amount: {
+      type: Boolean,
+      default: true,
+    },
+    is_private: {
+      type: Boolean,
+      default: true
+    },
     created_at: {
       type: Date,
       default: new Date(),
