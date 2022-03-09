@@ -18,6 +18,16 @@ class UserController {
       next(new UnauthorizationException());
     }
   }
+
+  async find(req, res, next) {
+    const data = await UserModel.find({deleted_at: {$eq: null}})
+
+    return res.status(200).json({
+      statusCode: 200,
+      success: true,
+      data,
+    });
+  }
 }
 
 module.exports = new UserController();
