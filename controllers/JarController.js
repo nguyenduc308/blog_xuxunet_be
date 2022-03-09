@@ -7,7 +7,7 @@ const JarModel = require('../models/Jar');
 
 class JarController {
   async find(req, res) {
-    const data = await JarSheetModel.find()
+    const data = await JarSheetModel.find({deleted_at: {$eq: null}})
       .populate('jars');
 
     return res.status(200).json({
@@ -92,12 +92,74 @@ class JarController {
   }
 
   async update(req, res) {
-    const { title, description, imageUrl } = req.body;
-    const { id } = req.params;
+    const {
+      _id,
+      name, 
+      description,
+      income,
+      index,
+      jars
+    } = req.body;
+    
+    const user = res.locals;
 
-    const serial = await Model.findByPk(id);
+    const jarsheet = await JarSheetModel.findByIdAndUpdate(_id,{
+      name, 
+      description,
+      income,
+      index,
+      slug: slugify(name),
+      updated_at: new Date(),
+    });
 
-    await serial.update({ title, description, imageUrl })
+    const updateJars = jars.map((jar, index) => {
+      if (jar._id.indexOf('new') > -1) {
+        return JarModel.create({
+          name: jar.name, 
+          slug: slugify(jar.name),
+          description: jar.description || '',
+          color: jar.color,
+          bg_color: jar.bg_color || null,
+          percent: isNaN(jar.percent) ? 0 : Number(jar.percent),
+          amount: jar.amount || Math.round(Number(jar.percent) * Number(income) / 100),
+          index: jar.index || index, 
+          deleted_at: null,
+          user: user._id,
+          updated_at: new Date(),
+          created_at: new Date(),
+          jarsheet: jarsheet._id
+        })
+      } 
+      return JarModel.findOneAndUpdate({
+        _id: jar._id
+      }, {
+        name: jar.name, 
+        slug: slugify(jar.name),
+        description: jar.description || '',
+        color: jar.color,
+        bg_color: jar.bg_color || null,
+        percent: isNaN(jar.percent) ? 0 : Number(jar.percent),
+        amount: jar.amount || Math.round(Number(jar.percent) * Number(income) / 100),
+        index: jar.index || index, 
+        deleted_at: null,
+        user: user._id,
+        updated_at: new Date(),
+        jarsheet: jarsheet._id
+      }, {upsert: true})
+    });
+
+    await Promise.all(updateJars).then(async (result) => {
+      const currentJars = jarsheet.jars;
+      const newIds = result.map((jar) => jar._id).filter((jar) => {
+        return !currentJars.includes(jar._id);
+      });
+
+      await JarSheetModel.findByIdAndUpdate(jarsheet._id, {
+        jars: [...currentJars, ...newIds]
+      })
+
+      return true;
+    });
 
     return res.status(200).json({
       success: true,
@@ -106,17 +168,22 @@ class JarController {
   }
 
   async destroy(req, res, next) {
-    return Model
-      .destroy({
-        where: { id: req.params.id },
-      })
-      .then((value) => {
-        if (typeof value === 'number' && value > 0) {
-          return res.status(200).json({ success: true, statusCode: 200 });
-        } else {
-          next(new NotFoundException(`Serial id {${req.params.id}} not found`));
-        }
-      });
+    return JarSheetModel
+        .findOneAndUpdate({
+          _id: req.params.id,
+        }, {
+          $set: {
+            deleted_at: new Date(),
+            deleted_by: res.locals.id,
+            updated_at: new Date(),
+          },
+        }, {
+          upsert: true,
+          rawResult: true
+        })
+        .then((value) => {
+          return res.status(200).json({ success: true, statusCode: 200, id: req.params.id});
+        });
   }
 
 

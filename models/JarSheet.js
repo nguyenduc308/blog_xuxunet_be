@@ -23,7 +23,10 @@ const JarSheetSchema = mongoose.Schema({
       type: Date,
       default: new Date(),
     },
-
+    deleted_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'users'
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'users'
