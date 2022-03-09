@@ -8,6 +8,6 @@ router.use('/users', require('./users'));
 router.use('/categories', require('./categories'));
 router.use('/comments', require('./comments'));
 router.use('/tracking', require('./tracking'));
-
+router.use('/jar-sheets', require('./jar-sheets'));
 
 module.exports = router;
