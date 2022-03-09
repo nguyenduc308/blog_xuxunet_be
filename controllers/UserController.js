@@ -19,6 +19,25 @@ class UserController {
     }
   }
 
+  async updateProfile(req, res, next) {
+    const decoded = res.locals;
+
+    const {password, ...user} = await UserModel.findByIdAndUpdate(decoded.id, {
+      first_name: req.body.first_name,
+      last_name: req.body.last_name
+    });
+
+    if (user) {
+      return res.status(200).json({
+        success: true,
+        data: user,
+        statusCode: 200,
+      });
+    } else {
+      next(new UnauthorizationException());
+    }
+  }
+
   async find(req, res, next) {
     const data = await UserModel.find({deleted_at: {$eq: null}})
 
