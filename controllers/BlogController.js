@@ -7,7 +7,7 @@ const BlogModel = require('../models/Blog');
 const ViewModel = require('../models/View');
 const CommentModel = require('../models/Comment');
 const LikeModel = require('../models/Like');
-
+const UserModel = require('../models/User');
 class BlogController {
   async find(req, res) {
     const data = await BlogModel
@@ -59,7 +59,15 @@ class BlogController {
     }
 
     const comments = await CommentModel.find({blog: blog._id, parent: { $eq: null }})
-                            .populate('children', null, 'comments')
+                            .populate({
+                              path: 'children',
+                              model: CommentModel,
+                              populate: {
+                                path: 'user',
+                                model: UserModel,
+                                select: ['first_name', 'last_name']
+                              }
+                            })
                             .populate('user', ['first_name', 'last_name'], 'users')
                             .sort([['created_at', -1]]);
                     

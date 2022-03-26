@@ -1,11 +1,35 @@
 const CommentModel = require('../models/Comment');
+const UserModel = require('../models/User');
 
 class CommentController {
+  async find(req, res, next) {
+    const comments = await CommentModel.find()
+      // .populate({
+      //   path: 'children',
+      //   model: CommentModel,
+      //   populate: {
+      //     path: 'user',
+      //     model: UserModel,
+      //     select: ['first_name', 'last_name']
+      //   }
+      // })
+      .populate('blog', ['title', 'slug', '_id'], 'blogs')
+      .populate('user', ['first_name', 'last_name'], 'users')
+      .select('-children')
+      .sort([['created_at', -1]]);
+    
+    return res.status(200).json({
+      statusCode: 200,
+      success: true,
+      data: comments
+    });
+  }
+
   async create(req, res, next) {
     const { content, blog_id, comment_id } = req.body;
     const decoded = res.locals;
 
-    const existedComment = comment_id
+    const parrentComment = comment_id
       ? await CommentModel.findById(comment_id).lean()
       : null;
 
@@ -20,11 +44,9 @@ class CommentController {
         parent: comment_id || null
       });
 
-      if (existedComment) {
-        await CommentModel.updateOne({
-          id: existedComment._id
-        }, {
-          children: existedComment.children.concat(comment._id)
+      if (parrentComment) {
+        await CommentModel.findByIdAndUpdate(parrentComment._id, {
+          children: [...parrentComment.children, comment._id]
         });
       }
 
@@ -40,6 +62,31 @@ class CommentController {
     } catch (err) {
       next(err);
     }
+  }
+
+  async destroy(req, res, next) {
+    return CommentModel
+      .findOneAndDelete({
+        _id: req.params.id,
+      })
+      .then(async (value) => {
+        if (!value) {
+          return res.status(200).json({
+            success: false,
+            statusCode: 404,
+          })
+        }
+
+        if (value.children.length) {
+          await CommentModel.deleteMany({
+            _id: {
+              $in: value.children
+            }
+          })
+        }
+
+        return res.status(200).json({ success: true, statusCode: 200, id: req.params.id, children: value.children});
+      });
   }
 }
 
