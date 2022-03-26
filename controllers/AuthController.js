@@ -125,7 +125,7 @@ class AuthController {
 
   async logout(req, res) {
     res.writeHead(200, {
-      'Set-Cookie': `token=deleted; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`,
+      'Set-Cookie': `token=deleted; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; domain=${process.env.FE_DOMAIN}`,
     });
 
     return res.end();
