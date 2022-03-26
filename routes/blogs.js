@@ -7,6 +7,7 @@ router.get('/deleted', authenticate, authorization(['admin', 'mod']), controller
 router.get('/:slug', controller.findBySlug);
 router.post('/', authenticate, authorization(['admin', 'mod']), controller.create);
 router.delete('/:id', authenticate, authorization(['admin']), controller.destroy);
+router.put('/:id', authenticate, authorization(['admin']), controller.update);
 router.post('/:id/undo-delete', authenticate, authorization(['admin', 'mod']), controller.undoDestroy);
 router.delete('/:id/soft-delete', authenticate, authorization(['admin', 'mod']), controller.softDestroy);
 

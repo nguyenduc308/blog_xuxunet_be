@@ -26,6 +26,8 @@ const port = parseInt(process.env.PORT || '5000', 10);
     "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
     credentials: true,
   }));
+  server.use('/', express.static('public'));
+
   server.use(express.json());
   server.use('/', require('./routes'));
   server.use(errorsHandler);

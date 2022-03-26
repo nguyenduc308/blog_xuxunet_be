@@ -51,6 +51,13 @@ class BlogController {
         .select('-comments')
         .populate('view');
 
+    if (!blog) {
+      return res.status(200).json({
+        statusCode: 404,
+        success: false,
+      });
+    }
+
     const comments = await CommentModel.find({blog: blog._id, parent: { $eq: null }})
                             .populate('children', null, 'comments')
                             .populate('user', ['first_name', 'last_name'], 'users')
@@ -84,8 +91,8 @@ class BlogController {
       status,
       excerpt,
       slug,
-      image_url,
-      show_image,
+      featured_image_url,
+      show_featured_image,
       categories,
     } = req.body;
     const author_id = res.locals.id;
@@ -102,8 +109,8 @@ class BlogController {
       const blog = new BlogModel({
         title,
         status,
-        image_url,
-        show_image,
+        featured_image_url,
+        show_featured_image,
         blocks,
         excerpt: sliceString(excerpt, 250, '') || '',
         slug: slug || slugify(title).toLowerCase(),
@@ -144,29 +151,28 @@ class BlogController {
       status,
       excerpt,
       slug,
-      image_url,
-      show_image,
-      category_ids,
+      featured_image_url,
+      show_featured_image,
+      categories,
     } = req.body;
     const { id } = req.params;
 
-    const blog = await model.findByPk(id);
-    const block = await blockModel.findByPk(blocks.id);
+    const blog = await BlogModel.findById(id);
 
     if (!blog) {
       return next(new NotFoundException(`Blog id {${id}} not found`));
     }
 
-    if (!block) {
-      return next(new NotFoundException(`Block id {${blocks.id}} not found`));
-    }
-
-    await blog.update({ title, status, excerpt, slug, show_image, image_url });
-    await block.update(blocks);
-
-    if (category_ids && category_ids.length) {
-      await blog.setCategories(category_ids);
-    }
+    await BlogModel.findByIdAndUpdate(id, {
+      title,
+      blocks,
+      status,
+      excerpt,
+      featured_image_url,
+      show_featured_image,
+      categories,
+      updated_at: new Date(),
+    })
 
     return res.status(200).json({
       statusCode: 200,
